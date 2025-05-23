@@ -5,18 +5,23 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
 import { useEffect, useState } from "react";
 import { fetchTasks, createTask } from "@/lib/api";
+import type { EventClickArg } from "@fullcalendar/core";
+
 
 type Task = {
   id: number;
   title: string;
   description?: string;
   start_time?: string;
+  end_time?: string;
 };
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<any[]>([]);
-  const [showModal, setShowModal] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -26,19 +31,25 @@ export default function CalendarPage() {
 
   async function loadTasks() {
     const data = await fetchTasks();
-    const calendarEvents = data
-      .filter((task: Task) => task.start_time)
-      .map((task: Task) => ({
+    setEvents(
+      data.map((task: Task) => ({
         title: task.title,
         date: task.start_time,
         id: task.id.toString(),
-      }));
-    setEvents(calendarEvents);
+        extendedProps: task, 
+      }))
+    );
   }
 
   function handleDateClick(arg: DateClickArg) {
     setSelectedDate(arg.dateStr);
-    setShowModal(true);
+    setShowForm(true);
+  }
+
+  function handleEventClick(arg: EventClickArg) {
+    const task = arg.event.extendedProps as Task;
+    setSelectedTask(task);
+    setShowDetail(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -53,7 +64,7 @@ export default function CalendarPage() {
 
     setTitle("");
     setDescription("");
-    setShowModal(false);
+    setShowForm(false);
     loadTasks();
   }
 
@@ -67,44 +78,65 @@ export default function CalendarPage() {
         events={events}
         height="auto"
         dateClick={handleDateClick}
+        eventClick={handleEventClick}
       />
 
-      {showModal && (
+      {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative">
-            <h2 className="text-lg font-semibold mb-2">
-              Yeni Görev – {selectedDate}
-            </h2>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
+            <h2 className="text-lg font-semibold mb-2">Yeni Görev – {selectedDate}</h2>
             <form onSubmit={handleSubmit} className="space-y-3">
               <input
                 type="text"
-                placeholder="Görev başlığı"
+                placeholder="Başlık"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full border p-2 rounded"
               />
               <textarea
-                placeholder="Açıklama (isteğe bağlı)"
+                placeholder="Açıklama"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full border p-2 rounded"
               />
               <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded"
-                >
+                <button onClick={() => setShowForm(false)} type="button" className="border px-4 py-2 rounded">
                   İptal
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
-                >
+                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
                   Kaydet
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showDetail && selectedTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
+            <h2 className="text-xl font-bold mb-2">{selectedTask.title}</h2>
+            {selectedTask.description && (
+              <p className="text-gray-700 mb-2">{selectedTask.description}</p>
+            )}
+            {selectedTask.start_time && (
+              <p className="text-sm text-gray-500">
+                Başlangıç: {new Date(selectedTask.start_time).toLocaleString()}
+              </p>
+            )}
+            {selectedTask.end_time && (
+              <p className="text-sm text-gray-500">
+                Bitiş: {new Date(selectedTask.end_time).toLocaleString()}
+              </p>
+            )}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowDetail(false)}
+                className="px-4 py-2 bg-gray-300 rounded"
+              >
+                Kapat
+              </button>
+            </div>
           </div>
         </div>
       )}
