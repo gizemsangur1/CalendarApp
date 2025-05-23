@@ -4,9 +4,8 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
 import { useEffect, useState } from "react";
-import { fetchTasks, createTask } from "@/lib/api";
+import { fetchTasks, createTask, updateTask } from "@/lib/api";
 import type { EventClickArg } from "@fullcalendar/core";
-
 
 type Task = {
   id: number;
@@ -36,7 +35,7 @@ export default function CalendarPage() {
         title: task.title,
         date: task.start_time,
         id: task.id.toString(),
-        extendedProps: task, 
+        extendedProps: task,
       }))
     );
   }
@@ -84,7 +83,9 @@ export default function CalendarPage() {
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg font-semibold mb-2">Yeni Görev – {selectedDate}</h2>
+            <h2 className="text-lg font-semibold mb-2">
+              Yeni Görev – {selectedDate}
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-3">
               <input
                 type="text"
@@ -100,10 +101,17 @@ export default function CalendarPage() {
                 className="w-full border p-2 rounded"
               />
               <div className="flex justify-end gap-2">
-                <button onClick={() => setShowForm(false)} type="button" className="border px-4 py-2 rounded">
+                <button
+                  onClick={() => setShowForm(false)}
+                  type="button"
+                  className="border px-4 py-2 rounded"
+                >
                   İptal
                 </button>
-                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white px-4 py-2 rounded"
+                >
                   Kaydet
                 </button>
               </div>
@@ -115,28 +123,85 @@ export default function CalendarPage() {
       {showDetail && selectedTask && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-xl font-bold mb-2">{selectedTask.title}</h2>
-            {selectedTask.description && (
-              <p className="text-gray-700 mb-2">{selectedTask.description}</p>
-            )}
-            {selectedTask.start_time && (
-              <p className="text-sm text-gray-500">
-                Başlangıç: {new Date(selectedTask.start_time).toLocaleString()}
-              </p>
-            )}
-            {selectedTask.end_time && (
-              <p className="text-sm text-gray-500">
-                Bitiş: {new Date(selectedTask.end_time).toLocaleString()}
-              </p>
-            )}
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setShowDetail(false)}
-                className="px-4 py-2 bg-gray-300 rounded"
-              >
-                Kapat
-              </button>
-            </div>
+            <h2 className="text-xl font-bold mb-4">Görevi Güncelle</h2>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await updateTask(Number(selectedTask.id), {
+                  title: selectedTask.title,
+                  description: selectedTask.description,
+                  start_time: selectedTask.start_time,
+                  end_time: selectedTask.end_time,
+                });
+                setShowDetail(false);
+                loadTasks();
+              }}
+              className="space-y-3"
+            >
+              <input
+                type="text"
+                className="w-full border p-2 rounded"
+                value={selectedTask.title}
+                onChange={(e) =>
+                  setSelectedTask({ ...selectedTask, title: e.target.value })
+                }
+              />
+              <textarea
+                className="w-full border p-2 rounded"
+                value={selectedTask.description || ""}
+                onChange={(e) =>
+                  setSelectedTask({
+                    ...selectedTask,
+                    description: e.target.value,
+                  })
+                }
+              />
+              <input
+                type="datetime-local"
+                className="w-full border p-2 rounded"
+                value={
+                  selectedTask.start_time
+                    ? selectedTask.start_time.slice(0, 16)
+                    : ""
+                }
+                onChange={(e) =>
+                  setSelectedTask({
+                    ...selectedTask,
+                    start_time: e.target.value,
+                  })
+                }
+              />
+              <input
+                type="datetime-local"
+                className="w-full border p-2 rounded"
+                value={
+                  selectedTask.end_time
+                    ? selectedTask.end_time.slice(0, 16)
+                    : ""
+                }
+                onChange={(e) =>
+                  setSelectedTask({
+                    ...selectedTask,
+                    end_time: e.target.value,
+                  })
+                }
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 border rounded"
+                  onClick={() => setShowDetail(false)}
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 text-white rounded"
+                >
+                  Kaydet
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
