@@ -42,3 +42,14 @@ def update_task(db: Session, task_id: int, updated_data: TaskCreate):
         db.commit()
         db.refresh(task)
     return task
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(User).filter(User.email == email).first()
+
+def create_user(db: Session, email: str, password: str):
+    hashed_password = get_password_hash(password)
+    user = User(email=email, hashed_password=hashed_password)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user

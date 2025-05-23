@@ -1,8 +1,15 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import models, schemas, crud
 from database import SessionLocal, engine
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
+from jose import jwt, JWTError
+from auth import SECRET_KEY, ALGORITHM
+import crud
+from schemas import UserCreate, Token
+
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -56,3 +63,40 @@ def update_task(task_id: int, updated_data: schemas.TaskCreate, db: Session = De
     if not task:
         raise HTTPException(status_code=404, detail="Güncellenecek görev bulunamadı")
     return task
+
+@app.post("/register", response_model=schemas.Token)
+def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_email(db, user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email zaten kayıtlı")
+
+    user = crud.create_user(db, user.email, user.password)
+    token = create_access_token({"sub": user.email})
+    return {"access_token": token, "token_type": "bearer"}
+
+@app.post("/login", response_model=schemas.Token)
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = crud.get_user_by_email(db, form_data.username)
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Geçersiz giriş bilgileri")
+
+    token = create_access_token({"sub": user.email})
+    return {"access_token": token, "token_type": "bearer"}
+
+
+# Kullanıcı doğrulama fonksiyonu
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Token geçersiz")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token doğrulanamadı")
+
+    user = crud.get_user_by_email(db, email)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Kullanıcı bulunamadı")
+    return user
