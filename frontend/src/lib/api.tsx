@@ -26,8 +26,19 @@ export async function deleteTask(id: number) {
 export async function updateTask(id: number, updatedData: any) {
   const res = await fetch(`http://127.0.0.1:8000/tasks/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(updatedData),
   });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("PUT error: " + err);
+  }
+
   return res.json();
 }
+
+
+

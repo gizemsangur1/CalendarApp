@@ -38,6 +38,7 @@ def update_task(db: Session, task_id: int, updated_data: TaskCreate):
         task.description = updated_data.description
         task.start_time = updated_data.start_time
         task.end_time = updated_data.end_time
+        task.completed = updated_data.completed
         db.commit()
         db.refresh(task)
     return task

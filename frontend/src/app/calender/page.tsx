@@ -2,10 +2,11 @@
 
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
+import interactionPlugin from "@fullcalendar/interaction";
+import type { DateClickArg } from "@fullcalendar/interaction";
+import type { EventClickArg } from "@fullcalendar/core";
 import { useEffect, useState } from "react";
 import { fetchTasks, createTask, updateTask } from "@/lib/api";
-import type { EventClickArg } from "@fullcalendar/core";
 
 type Task = {
   id: number;
@@ -13,6 +14,7 @@ type Task = {
   description?: string;
   start_time?: string;
   end_time?: string;
+  completed: boolean;
 };
 
 export default function CalendarPage() {
@@ -36,6 +38,7 @@ export default function CalendarPage() {
         date: task.start_time,
         id: task.id.toString(),
         extendedProps: task,
+        className: task.completed ? "line-through text-gray-400" : "",
       }))
     );
   }
@@ -83,9 +86,7 @@ export default function CalendarPage() {
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg font-semibold mb-2">
-              Yeni Görev – {selectedDate}
-            </h2>
+            <h2 className="text-lg font-semibold mb-2">Yeni Görev – {selectedDate}</h2>
             <form onSubmit={handleSubmit} className="space-y-3">
               <input
                 type="text"
@@ -101,17 +102,10 @@ export default function CalendarPage() {
                 className="w-full border p-2 rounded"
               />
               <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowForm(false)}
-                  type="button"
-                  className="border px-4 py-2 rounded"
-                >
+                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border rounded">
                   İptal
                 </button>
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded"
-                >
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
                   Kaydet
                 </button>
               </div>
@@ -132,6 +126,7 @@ export default function CalendarPage() {
                   description: selectedTask.description,
                   start_time: selectedTask.start_time,
                   end_time: selectedTask.end_time,
+                  completed: selectedTask.completed,
                 });
                 setShowDetail(false);
                 loadTasks();
@@ -150,42 +145,35 @@ export default function CalendarPage() {
                 className="w-full border p-2 rounded"
                 value={selectedTask.description || ""}
                 onChange={(e) =>
-                  setSelectedTask({
-                    ...selectedTask,
-                    description: e.target.value,
-                  })
+                  setSelectedTask({ ...selectedTask, description: e.target.value })
                 }
               />
               <input
                 type="datetime-local"
                 className="w-full border p-2 rounded"
-                value={
-                  selectedTask.start_time
-                    ? selectedTask.start_time.slice(0, 16)
-                    : ""
-                }
+                value={selectedTask.start_time ? selectedTask.start_time.slice(0, 16) : ""}
                 onChange={(e) =>
-                  setSelectedTask({
-                    ...selectedTask,
-                    start_time: e.target.value,
-                  })
+                  setSelectedTask({ ...selectedTask, start_time: e.target.value })
                 }
               />
               <input
                 type="datetime-local"
                 className="w-full border p-2 rounded"
-                value={
-                  selectedTask.end_time
-                    ? selectedTask.end_time.slice(0, 16)
-                    : ""
-                }
+                value={selectedTask.end_time ? selectedTask.end_time.slice(0, 16) : ""}
                 onChange={(e) =>
-                  setSelectedTask({
-                    ...selectedTask,
-                    end_time: e.target.value,
-                  })
+                  setSelectedTask({ ...selectedTask, end_time: e.target.value })
                 }
               />
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={!!selectedTask.completed}
+                  onChange={(e) =>
+                    setSelectedTask({ ...selectedTask, completed: e.target.checked })
+                  }
+                />
+                Tamamlandı
+              </label>
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
