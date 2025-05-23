@@ -6,7 +6,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import type { DateClickArg } from "@fullcalendar/interaction";
 import type { EventClickArg } from "@fullcalendar/core";
 import { useEffect, useState } from "react";
-import { fetchTasks, createTask, updateTask } from "@/lib/api";
+import { fetchTasks, createTask, updateTask, deleteTask } from "@/lib/api";
 
 type Task = {
   id: number;
@@ -86,7 +86,9 @@ export default function CalendarPage() {
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg font-semibold mb-2">Yeni Görev – {selectedDate}</h2>
+            <h2 className="text-lg font-semibold mb-2">
+              Yeni Görev – {selectedDate}
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-3">
               <input
                 type="text"
@@ -102,10 +104,17 @@ export default function CalendarPage() {
                 className="w-full border p-2 rounded"
               />
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border rounded">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 border rounded"
+                >
                   İptal
                 </button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                >
                   Kaydet
                 </button>
               </div>
@@ -145,21 +154,35 @@ export default function CalendarPage() {
                 className="w-full border p-2 rounded"
                 value={selectedTask.description || ""}
                 onChange={(e) =>
-                  setSelectedTask({ ...selectedTask, description: e.target.value })
+                  setSelectedTask({
+                    ...selectedTask,
+                    description: e.target.value,
+                  })
                 }
               />
               <input
                 type="datetime-local"
                 className="w-full border p-2 rounded"
-                value={selectedTask.start_time ? selectedTask.start_time.slice(0, 16) : ""}
+                value={
+                  selectedTask.start_time
+                    ? selectedTask.start_time.slice(0, 16)
+                    : ""
+                }
                 onChange={(e) =>
-                  setSelectedTask({ ...selectedTask, start_time: e.target.value })
+                  setSelectedTask({
+                    ...selectedTask,
+                    start_time: e.target.value,
+                  })
                 }
               />
               <input
                 type="datetime-local"
                 className="w-full border p-2 rounded"
-                value={selectedTask.end_time ? selectedTask.end_time.slice(0, 16) : ""}
+                value={
+                  selectedTask.end_time
+                    ? selectedTask.end_time.slice(0, 16)
+                    : ""
+                }
                 onChange={(e) =>
                   setSelectedTask({ ...selectedTask, end_time: e.target.value })
                 }
@@ -169,25 +192,48 @@ export default function CalendarPage() {
                   type="checkbox"
                   checked={!!selectedTask.completed}
                   onChange={(e) =>
-                    setSelectedTask({ ...selectedTask, completed: e.target.checked })
+                    setSelectedTask({
+                      ...selectedTask,
+                      completed: e.target.checked,
+                    })
                   }
                 />
                 Tamamlandı
               </label>
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-between items-center pt-2">
                 <button
                   type="button"
-                  className="px-4 py-2 border rounded"
-                  onClick={() => setShowDetail(false)}
+                  className="text-red-600 hover:underline text-sm"
+                  onClick={async () => {
+                    if (!selectedTask) return;
+                    const onay = confirm(
+                      "Görevi silmek istediğine emin misin?"
+                    );
+                    if (!onay) return;
+
+                    await deleteTask(selectedTask.id);
+                    setShowDetail(false);
+                    loadTasks();
+                  }}
                 >
-                  İptal
+                  🗑️ Sil
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded"
-                >
-                  Kaydet
-                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="px-4 py-2 border rounded"
+                    onClick={() => setShowDetail(false)}
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-green-600 text-white rounded"
+                  >
+                    Kaydet
+                  </button>
+                </div>
               </div>
             </form>
           </div>
