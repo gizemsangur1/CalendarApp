@@ -7,6 +7,7 @@ import type { DateClickArg } from "@fullcalendar/interaction";
 import type { EventClickArg } from "@fullcalendar/core";
 import { useEffect, useState } from "react";
 import { fetchTasks, createTask, updateTask, deleteTask } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 type Task = {
   id: number;
@@ -25,22 +26,27 @@ export default function CalendarPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     loadTasks();
   }, []);
 
   async function loadTasks() {
-    const data = await fetchTasks();
-    setEvents(
-      data.map((task: Task) => ({
-        title: task.title,
-        date: task.start_time,
-        id: task.id.toString(),
-        extendedProps: task,
-        className: task.completed ? "line-through text-gray-400" : "",
-      }))
-    );
+    try {
+      const data = await fetchTasks();
+      setEvents(
+        data.map((task: Task) => ({
+          id: task.id.toString(),
+          title: task.title,
+          date: task.start_time,
+          extendedProps: task,
+          className: task.completed ? "line-through text-gray-400" : "",
+        }))
+      );
+    } catch (err) {
+      console.error("Görevler yüklenemedi:", err);
+    }
   }
 
   function handleDateClick(arg: DateClickArg) {
@@ -53,6 +59,11 @@ export default function CalendarPage() {
     setSelectedTask(task);
     setShowDetail(true);
   }
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/");
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,7 +83,15 @@ export default function CalendarPage() {
 
   return (
     <main className="max-w-5xl mx-auto p-4 relative">
-      <h1 className="text-2xl font-bold mb-4">📅 Takvim Görünümü</h1>
+      <div className="flex flex-row justify-between">
+        <h1 className="text-2xl font-bold mb-4">📅 Takvim Görünümü</h1>
+        <button
+          onClick={handleLogout}
+          className="text-sm bg-red-500 text-white px-3 py-1 rounded"
+        >
+          Çıkış Yap
+        </button>
+      </div>
 
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}

@@ -17,7 +17,7 @@ class Task(BaseModel):
     end_time: Optional[datetime]
     completed: bool
     created_at: datetime
-    user_id: Optional[int]
+    user_id: int
 
     class Config:
         form_mode = True  

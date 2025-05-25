@@ -1,8 +1,21 @@
 const BASE_URL = "http://127.0.0.1:8000";
 
+const getAuthHeader = () => {
+  const token = localStorage.getItem("token");
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+};
+
 export async function fetchTasks() {
-  const res = await fetch(`${BASE_URL}/tasks`);
-  return res.json();
+  const res = await fetch(`${BASE_URL}/tasks/`, {
+    headers: getAuthHeader(),
+  });
+
+  if (!res.ok) throw new Error("Görevler alınamadı");
+
+  return await res.json();
 }
 
 export async function createTask(task: {
@@ -13,22 +26,30 @@ export async function createTask(task: {
 }) {
   const res = await fetch(`${BASE_URL}/tasks/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeader(),
     body: JSON.stringify(task),
   });
-  return res.json();
+
+  if (!res.ok) throw new Error("Görev oluşturulamadı");
+
+  return await res.json();
 }
 
 export async function deleteTask(id: number) {
-  return fetch(`${BASE_URL}/tasks/${id}`, { method: "DELETE" });
+  const res = await fetch(`${BASE_URL}/tasks/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeader(),
+  });
+
+  if (!res.ok) throw new Error("Görev silinemedi");
+
+  return await res.json();
 }
 
 export async function updateTask(id: number, updatedData: any) {
-  const res = await fetch(`http://127.0.0.1:8000/tasks/${id}`, {
+  const res = await fetch(`${BASE_URL}/tasks/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeader(),
     body: JSON.stringify(updatedData),
   });
 
@@ -37,9 +58,5 @@ export async function updateTask(id: number, updatedData: any) {
     throw new Error("PUT error: " + err);
   }
 
-  return res.json();
+  return await res.json();
 }
-
-
-
-

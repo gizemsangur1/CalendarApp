@@ -2,6 +2,10 @@ from sqlalchemy.orm import Session
 from models import Task
 from schemas import TaskCreate
 from datetime import datetime
+from models import User
+from auth import get_password_hash
+
+
 
 def create_task(db: Session, task: TaskCreate, user_id: int = None):
     db_task = Task(
@@ -23,6 +27,9 @@ def get_tasks(db: Session):
 
 def get_task(db: Session, task_id: int):
     return db.query(Task).filter(Task.id == task_id).first()
+
+def get_tasks_for_user(db: Session, user_id: int):
+    return db.query(Task).filter(Task.user_id == user_id).all()
 
 def delete_task(db: Session, task_id: int):
     task = db.query(Task).filter(Task.id == task_id).first()
